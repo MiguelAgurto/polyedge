@@ -24,7 +24,7 @@ def test_normalization_never_invents_resolution(market_data):
     row=normalize_market(GammaMarket.model_validate(market_data), {"id":"90177","slug":"london-weather"})
     assert row["market_type"] == "daily_max_temperature"
     assert row["city"] == "London"
-    assert row["target_date"] == "2026-10-18"
+    assert row["target_date"] == "2099-10-18"
     assert row["station_id"] is None and row["resolution_source"] == "https://example.org/weather-observations"
     assert row["resolution_rules"] == market_data["description"]
     assert row["resolution_status"] == "needs_review"
