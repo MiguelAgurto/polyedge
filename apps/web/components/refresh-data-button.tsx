@@ -15,6 +15,10 @@ export function RefreshDataButton() {
       const response = await fetch("/api/refresh", { method: "POST", cache: "no-store" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Refresh failed.");
+      if (result.queued) {
+        setMessage("The refresh is running in Appwrite. This page will show the new data when it finishes.");
+        return;
+      }
       const summary = result.summary as Record<string, { errors_count?: number; buy_yes?: number; buy_no?: number; updated?: number }>;
       router.refresh();
       const warnings = Object.values(summary).reduce((count, part) => count + (part.errors_count ?? 0), 0);

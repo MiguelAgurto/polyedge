@@ -1,0 +1,76 @@
+{
+    "projectId": "6adf6632003217d76f0b",
+    "projectName": "PolyEdge",
+    "endpoint": "https://fra.cloud.appwrite.io/v1",
+    "functions": [
+        {
+            "$id": "polyedge-scanner",
+            "name": "PolyEdge scanner",
+            "enabled": true,
+            "logging": true,
+            "runtime": "python-3.12",
+      "buildSpecification": "s-2vcpu-2gb",
+      "runtimeSpecification": "s-0.5vcpu-512mb",
+            "deploymentRetention": 3,
+            "scopes": [
+                "files.read",
+                "files.write",
+                "rows.read",
+                "rows.write"
+            ],
+            "events": [],
+      "schedule": "",
+      "interval": 60,
+            "timeout": 900,
+            "entrypoint": "appwrite/functions/scanner/main.py",
+            "commands": "pip install ./services/scanner appwrite",
+            "ignore": ".next\napps/web/node_modules\nservices/scanner/.venv",
+            "path": "."
+        }
+    ],
+    "tablesDB": [
+        {
+            "$id": "polyedge",
+            "name": "PolyEdge"
+        }
+    ],
+    "tables": [
+        {
+            "$id": "state_pointers",
+            "databaseId": "polyedge",
+            "name": "State pointers",
+            "enabled": true,
+            "rowSecurity": false,
+            "columns": [
+                {
+                    "key": "file_id",
+                    "type": "varchar",
+                    "size": 36,
+                    "required": true
+                },
+                {
+                    "key": "updated_at",
+                    "type": "datetime",
+                    "required": true
+                }
+            ],
+            "indexes": []
+        }
+    ],
+    "buckets": [
+        {
+            "$id": "polyedge-state",
+            "name": "PolyEdge scanner state",
+            "enabled": true,
+            "fileSecurity": false,
+            "maximumFileSize": 31457280,
+            "allowedFileExtensions": [
+                "gz"
+            ],
+            "compression": "none",
+            "encryption": true,
+            "antivirus": true,
+            "transformations": false
+        }
+    ]
+}

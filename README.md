@@ -13,6 +13,28 @@ See [how it works](#how-it-works), [the project status map](docs/project-status.
 
 ## How it works
 
+### Online deployment
+
+The dashboard runs on Netlify. Appwrite runs the scanner every 60 minutes and
+stores the latest compressed scanner state in a private bucket. The dashboard
+reads that state on the server, so Appwrite credentials never reach a visitor's
+browser. The **Get latest data** button queues the same Appwrite scanner job.
+
+Set these server-only Netlify variables before publishing:
+
+```text
+APPWRITE_ENDPOINT=https://fra.cloud.appwrite.io/v1
+APPWRITE_PROJECT_ID=6adf6632003217d76f0b
+APPWRITE_API_KEY=<server API key>
+APPWRITE_DATABASE_ID=polyedge
+APPWRITE_STATE_TABLE_ID=state_pointers
+APPWRITE_STATE_BUCKET_ID=polyedge-state
+APPWRITE_SCANNER_FUNCTION_ID=polyedge-scanner
+```
+
+`APPWRITE_API_KEY` needs only the Appwrite scopes needed to read rows and
+files, and to create function executions. Never use `NEXT_PUBLIC_` for it.
+
 1. The scanner discovers active public Polymarket weather contracts and keeps only the supported daily maximum-temperature markets.
 2. It reads the public YES and NO order books, saves the best executable prices and liquidity, and records failures without stopping the rest of the scan.
 3. For markets with an explicit NOAA airport station in their rules, it collects GFS ensemble forecasts and airport observations. It also maintains a short historical sample to measure forecast error.

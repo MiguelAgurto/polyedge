@@ -1,5 +1,7 @@
 import "server-only";
+import { gunzip } from "node:zlib";
 import { readFile } from "node:fs/promises";
+import { promisify } from "node:util";
 import path from "node:path";
 import { cache } from "react";
 import type { EnsembleVote, Forecast, Market, MarketRow, Observation, Run, ScanError, Signal, Snapshot, Token, TraderResearch } from "@/types/database";
@@ -19,8 +21,58 @@ type LocalData = {
 
 const dataFile = process.env.POLYEDGE_DATA_FILE || path.resolve(process.cwd(), "../../data/polyedge.json");
 const empty: LocalData = { markets: [], tokens: [], snapshots: [], runs: [], errors: [] };
+const decompress = promisify(gunzip);
+
+type AppwriteConfig = {
+  endpoint: string;
+  projectId: string;
+  apiKey: string;
+  databaseId: string;
+  tableId: string;
+  bucketId: string;
+};
+
+function getAppwriteConfig(): AppwriteConfig | null {
+  const endpoint = process.env.APPWRITE_ENDPOINT;
+  const projectId = process.env.APPWRITE_PROJECT_ID;
+  const apiKey = process.env.APPWRITE_API_KEY;
+  if (!endpoint || !projectId || !apiKey) return null;
+  return {
+    endpoint: endpoint.replace(/\/$/, ""),
+    projectId,
+    apiKey,
+    databaseId: process.env.APPWRITE_DATABASE_ID || "polyedge",
+    tableId: process.env.APPWRITE_STATE_TABLE_ID || "state_pointers",
+    bucketId: process.env.APPWRITE_STATE_BUCKET_ID || "polyedge-state",
+  };
+}
+
+function appwriteHeaders(config: AppwriteConfig): HeadersInit {
+  return {
+    "X-Appwrite-Project": config.projectId,
+    "X-Appwrite-Key": config.apiKey,
+  };
+}
+
+async function readAppwriteState(config: AppwriteConfig): Promise<LocalData> {
+  const pointerResponse = await fetch(
+    `${config.endpoint}/tablesdb/${config.databaseId}/tables/${config.tableId}/rows/latest`,
+    { headers: appwriteHeaders(config), cache: "no-store" },
+  );
+  if (pointerResponse.status === 404) return empty;
+  if (!pointerResponse.ok) throw new Error(`Appwrite state pointer failed (${pointerResponse.status}).`);
+  const pointer = await pointerResponse.json() as { file_id: string };
+  const fileResponse = await fetch(
+    `${config.endpoint}/storage/buckets/${config.bucketId}/files/${pointer.file_id}/download`,
+    { headers: appwriteHeaders(config), cache: "no-store" },
+  );
+  if (!fileResponse.ok) throw new Error(`Appwrite state file failed (${fileResponse.status}).`);
+  return JSON.parse((await decompress(Buffer.from(await fileResponse.arrayBuffer()))).toString("utf8")) as LocalData;
+}
 
 const load = cache(async (): Promise<LocalData> => {
+  const appwrite = getAppwriteConfig();
+  if (appwrite) return readAppwriteState(appwrite);
   try {
     return JSON.parse(await readFile(dataFile, "utf8")) as LocalData;
   } catch (error) {
