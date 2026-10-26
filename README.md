@@ -160,3 +160,9 @@ Unit tests use mocked API responses and do not require live Polymarket access. A
 ## Next milestone
 
 Verify the exact weather.gov settlement series against archived METARs, then keep a paper record of signal outcomes and simulated fills. More settled days will allow stronger probability calibration and a real profit backtest.
+## Private Netlify access
+
+The deployed dashboard uses HTTP Basic Authentication. Set `POLYEDGE_SITE_PASSWORD`
+as a Netlify secret and sign in with the username `miguel`. This app-level gate keeps
+the dashboard private on Netlify's free plan, where platform password protection is
+not available.
